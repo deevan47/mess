@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Mess Item{% endblock %}
+
+{% block content %}
+    <h1>Delete Mess Item</h1>
+    <form id="deleteItemForm">
+        <label for="delete-date">Date:</label>
+        <input type="date" id="delete-date" required><br><br>
+
+        <label for="delete-meal-type">Meal Type:</label>
+        <select id="delete-meal-type" required>
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+        </select><br><br>
+
+        <label for="delete-item-name">Item Name to Delete:</label>
+        <input type="text" id="delete-item-name" placeholder="e.g., Sambar" required><br><br>
+
+        <button type="submit">Delete Item</button>
+    </form>
+
+    <div id="delete-message" class="message" style="display: none;"></div>
+
+    <script>
+        const API_BASE_URL_DELETE = 'http://127.0.0.1:5000/api';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+            document.getElementById('delete-date').value = formattedDate;
+        });
+
+        document.getElementById('deleteItemForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const date = document.getElementById('delete-date').value;
+            const mealType = document.getElementById('delete-meal-type').value;
+            const itemName = document.getElementById('delete-item-name').value;
+            const messageDiv = document.getElementById('delete-message');
+
+            messageDiv.style.display = 'none';
+            messageDiv.className = 'message';
+
+            try {
+                const response = await fetch(`${API_BASE_URL_DELETE}/mess/${mealType}?date=${date}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ item: itemName }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = result.message || 'Item deleted successfully!';
+                    messageDiv.classList.add('success');
+                } else {
+                    throw new Error(result.message || 'Failed to delete item.');
+                }
+            } catch (error) {
+                console.error("Error deleting item:", error);
+                messageDiv.textContent = `Error: ${error.message}`;
+                messageDiv.classList.add('error');
+            } finally {
+                messageDiv.style.display = 'block';
+            }
+        });
+    </script>
+{% endblock %}

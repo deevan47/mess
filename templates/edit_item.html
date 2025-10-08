@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Mess Item{% endblock %}
+
+{% block content %}
+    <h1>Edit Mess Item</h1>
+    <form id="editItemForm">
+        <label for="edit-date">Date:</label>
+        <input type="date" id="edit-date" required><br><br>
+
+        <label for="edit-meal-type">Meal Type:</label>
+        <select id="edit-meal-type" required>
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+        </select><br><br>
+
+        <label for="edit-item-name">Item Name to Edit:</label>
+        <input type="text" id="edit-item-name" placeholder="e.g., Idli" required><br><br>
+
+        <label for="edit-item-new-quantity">New Quantity:</label>
+        <input type="text" id="edit-item-new-quantity" placeholder="e.g., 5 or unlimited" required><br><br>
+
+        <button type="submit">Update Item</button>
+    </form>
+
+    <div id="edit-message" class="message" style="display: none;"></div>
+
+    <script>
+        const API_BASE_URL_EDIT = 'http://127.0.0.1:5000/api';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+            document.getElementById('edit-date').value = formattedDate;
+        });
+
+        document.getElementById('editItemForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const date = document.getElementById('edit-date').value;
+            const mealType = document.getElementById('edit-meal-type').value;
+            const itemName = document.getElementById('edit-item-name').value;
+            const newQuantity = document.getElementById('edit-item-new-quantity').value;
+            const messageDiv = document.getElementById('edit-message');
+
+            messageDiv.style.display = 'none';
+            messageDiv.className = 'message';
+
+            try {
+                const response = await fetch(`${API_BASE_URL_EDIT}/mess/${mealType}?date=${date}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ item: itemName, quantity: newQuantity }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = result.message || 'Item updated successfully!';
+                    messageDiv.classList.add('success');
+                } else {
+                    throw new Error(result.message || 'Failed to update item.');
+                }
+            } catch (error) {
+                console.error("Error updating item:", error);
+                messageDiv.textContent = `Error: ${error.message}`;
+                messageDiv.classList.add('error');
+            } finally {
+                messageDiv.style.display = 'block';
+            }
+        });
+    </script>
+{% endblock %}

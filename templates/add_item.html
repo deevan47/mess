@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Mess Item{% endblock %}
+
+{% block content %}
+    <h1>Add New Mess Item</h1>
+    <form id="addItemForm">
+        <label for="add-date">Date:</label>
+        <input type="date" id="add-date" required><br><br>
+
+        <label for="add-meal-type">Meal Type:</label>
+        <select id="add-meal-type" required>
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+        </select><br><br>
+
+        <label for="add-item-name">Item Name:</label>
+        <input type="text" id="add-item-name" placeholder="e.g., Puri" required><br><br>
+
+        <label for="add-item-quantity">Quantity:</label>
+        <input type="text" id="add-item-quantity" placeholder="e.g., 2 or unlimited" value="1"><br><br>
+
+        <button type="submit">Add Item</button>
+    </form>
+
+    <div id="add-message" class="message" style="display: none;"></div>
+
+    <script>
+        const API_BASE_URL_ADD = 'http://127.0.0.1:5000/api'; // Ensure this matches your Flask app URL and API prefix
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+            document.getElementById('add-date').value = formattedDate;
+        });
+
+        document.getElementById('addItemForm').addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default form submission
+            const date = document.getElementById('add-date').value;
+            const mealType = document.getElementById('add-meal-type').value;
+            const itemName = document.getElementById('add-item-name').value;
+            const itemQuantity = document.getElementById('add-item-quantity').value;
+            const messageDiv = document.getElementById('add-message');
+
+            messageDiv.style.display = 'none';
+            messageDiv.className = 'message'; // Reset classes
+
+            try {
+                const response = await fetch(`${API_BASE_URL_ADD}/mess/${mealType}?date=${date}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ item: itemName, quantity: itemQuantity }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = result.message || 'Item added successfully!';
+                    messageDiv.classList.add('success');
+                    document.getElementById('addItemForm').reset(); // Clear form
+                    document.getElementById('add-date').value = date; // Keep date
+                } else {
+                    throw new Error(result.message || 'Failed to add item.');
+                }
+            } catch (error) {
+                console.error("Error adding item:", error);
+                messageDiv.textContent = `Error: ${error.message}`;
+                messageDiv.classList.add('error');
+            } finally {
+                messageDiv.style.display = 'block';
+            }
+        });
+    </script>
+{% endblock %}
