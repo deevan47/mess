@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Select a Cafe</h2>
+<ul>
+  {% for cafe in cafes %}
+    <li><a href="{{ url_for('show_cafe', name=cafe) }}">{{ cafe }}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}
