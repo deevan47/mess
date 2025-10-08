@@ -1,9 +1,92 @@
 {% extends "base.html" %}
+
+{% block title %}Today's Mess Food{% endblock %}
+
 {% block content %}
-<h2>Select a Cafe</h2>
-<ul>
-  {% for cafe in cafes %}
-    <li><a href="{{ url_for('show_cafe', name=cafe) }}">{{ cafe }}</a></li>
-  {% endfor %}
-</ul>
+    <h1>Today's Mess Food</h1>
+    <label for="date-selector">Select Date:</label>
+    <input type="date" id="date-selector" onchange="loadMessData(this.value)">
+
+    <div id="loading-message" style="display: none;">Loading...</div>
+    <div id="error-message" class="error" style="display: none;"></div>
+
+    <div id="mess-food-display">
+        <!-- Mess food data will be loaded here by JavaScript -->
+        <div class="meal-section">
+            <h3>Breakfast</h3>
+            <ul id="breakfast-list"></ul>
+        </div>
+        <div class="meal-section">
+            <h3>Lunch</h3>
+            <ul id="lunch-list"></ul>
+        </div>
+        <div class="meal-section">
+            <h3>Dinner</h3>
+            <ul id="dinner-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:5000/api'; // Ensure this matches your Flask app URL and API prefix
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const day = String(today.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+            document.getElementById('date-selector').value = formattedDate;
+            loadMessData(formattedDate);
+        });
+
+        async function loadMessData(date) {
+            const loadingMessage = document.getElementById('loading-message');
+            const errorMessage = document.getElementById('error-message');
+            const displayDiv = document.getElementById('mess-food-display');
+
+            loadingMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            displayDiv.style.display = 'none';
+
+            document.getElementById('breakfast-list').innerHTML = '';
+            document.getElementById('lunch-list').innerHTML = '';
+            document.getElementById('dinner-list').innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/mess?date=${date}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                }
+                const data = await response.json();
+
+                displayMeal(data.breakfast, 'breakfast-list');
+                displayMeal(data.lunch, 'lunch-list');
+                displayMeal(data.dinner, 'dinner-list');
+
+                displayDiv.style.display = 'block'; // Show content if successful
+            } catch (error) {
+                console.error("Error fetching mess data:", error);
+                errorMessage.textContent = `Failed to load mess data: ${error.message}. Please try again or check the server.`;
+                errorMessage.style.display = 'block';
+            } finally {
+                loadingMessage.style.display = 'none';
+            }
+        }
+
+        function displayMeal(mealItems, listId) {
+            const list = document.getElementById(listId);
+            if (mealItems && mealItems.length > 0) {
+                mealItems.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.item} (${item.quantity})`;
+                    list.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = 'No items listed for this meal.';
+                list.appendChild(li);
+            }
+        }
+    </script>
 {% endblock %}
